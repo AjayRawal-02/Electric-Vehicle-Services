@@ -254,4 +254,5 @@ router.put("/notifications/read", authMiddleware, async (req, res) => {
   res.json({ message: "Notifications marked read" });
 });
 
+
 export default router;

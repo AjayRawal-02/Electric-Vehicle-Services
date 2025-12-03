@@ -7,14 +7,14 @@ const userSchema = new mongoose.Schema(
     email: { type: String, required: true, unique: true },
     phone: { type: String, required: true, unique: true },
     password: { type: String, required: true },
-notifications: [
-  {
-    message: String,
-    isRead: { type: Boolean, default: false },
-    createdAt: { type: Date, default: Date.now }
-  }
-]
-,
+    notifications: [
+      {
+        message: String,
+        isRead: { type: Boolean, default: false },
+        createdAt: { type: Date, default: Date.now }
+      }
+    ]
+    ,
     // ⬇ Common Profile Fields
     address: { type: String, default: "" },
     photo: { type: String, default: "" }, // base64 image
@@ -22,9 +22,11 @@ notifications: [
     // ⬇ Service Provider Specific Fields
     serviceType: { type: String, default: "" },   // ex: Battery Repair
     experience: { type: String, default: "" },    // ex: 3 years
-    workingArea: { type: String, default: "",address: String,
-  latitude: Number,
-  longitude: Number, },   // ex: Jaipur, Ajmer Road
+    workingArea: {
+      type: String, default: "", address: String,
+      latitude: Number,
+      longitude: Number,
+    },   // ex: Jaipur, Ajmer Road
   },
   { timestamps: true }
 );

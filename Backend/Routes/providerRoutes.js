@@ -206,23 +206,20 @@ router.get("/service-history", authMiddleware, requireProvider, async (req, res)
 });
 
 // 📌 Get Active Job for Provider
-router.get("/active-job", authMiddleware, requireProvider, async (req, res) => {
+router.get("/active-job", authMiddleware, async (req, res) => {
   try {
     const job = await Booking.findOne({
       assignedProvider: req.user.id,
       status: "accepted"
-    })
-      .populate("customer", "name phone")
-      .sort({ updatedAt: -1 });
-
-    if (!job) return res.json({ job: null });
+    }).populate("customer", "name phone");
 
     res.json({ job });
-  } catch (error) {
-    console.log(error);
+  } catch (err) {
+    console.log(err);
     res.status(500).json({ message: "Error fetching active job" });
   }
 });
+
 
 // 📌 Mark job completed
 router.put("/active-job/complete/:id", authMiddleware, requireProvider, async (req, res) => {
@@ -309,6 +306,59 @@ router.get("/earnings", authMiddleware, requireProvider, async (req, res) => {
   } catch (error) {
     console.log(error);
     res.status(500).json({ message: "Error fetching earnings" });
+  }
+});
+
+router.put("/update-location", authMiddleware, requireProvider, async (req, res) => {
+  const { latitude, longitude } = req.body;
+
+  const job = await Booking.findOne({
+    assignedProvider: req.user.id,
+    status: "active"
+  });
+
+  if (!job) return res.status(404).json({ message: "No active job found" });
+
+  job.providerLocation = { latitude, longitude };
+  await job.save();
+
+  res.json({ message: "Location updated" });
+});
+
+router.put("/complete-job/:id", authMiddleware, requireProvider, async (req, res) => {
+  const booking = await Booking.findById(req.params.id);
+
+  booking.status = "completed";
+  await booking.save();
+
+  // notify.customer
+  await User.findByIdAndUpdate(booking.customer, {
+    $push: {
+      notifications: {
+        message: `Your job for ${booking.service} has been marked completed`,
+        time: new Date(),
+        read: false,
+        bookingId: booking._id,
+      }
+    }
+  });
+
+  res.json({ message: "Job completed successfully" });
+});
+
+// 🔥 UPDATE PROVIDER LIVE LOCATION
+router.put("/update-location", authMiddleware, requireProvider, async (req, res) => {
+  try {
+    const { lat, lng, bookingId } = req.body;
+
+    await Booking.findByIdAndUpdate(bookingId, {
+      providerLiveLocation: { lat, lng }
+    });
+
+    res.json({ message: "Provider location updated" });
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ message: "Failed to update location" });
   }
 });
 

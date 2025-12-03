@@ -1,121 +1,96 @@
 import express from "express";
 import Booking from "../Models/Booking.js";
 import authMiddleware from "../Middleware/authMiddleware.js";
-import User from "../Models/User.js"
+import User from "../Models/User.js";
 
 const router = express.Router();
 
-// 🟩 Create new booking
+/* ------------------------------------
+   CREATE BOOKING (Customer)
+------------------------------------ */
 router.post("/create", authMiddleware, async (req, res) => {
   try {
-    let { service, location, estimatedDistance } = req.body;
+    const { service, location, preferredTime, additionalDetails, vehicle, model } = req.body;
 
-    // 🔹 Location handling
-    let finalLocation = {};
-    if (typeof location === "string") {
-      finalLocation.address = location;
-    } else {
-      finalLocation = location; // { latitude, longitude, address }
-    }
-
-    const basePrice = 200;
-    const pricePerKm = 20;
-    const distancePrice = estimatedDistance * pricePerKm;
-    const totalPrice = basePrice + distancePrice;
+    const finalLocation =
+      typeof location === "string"
+        ? { address: location }
+        : location;
 
     const booking = new Booking({
       customer: req.user.id,
       service,
+      vehicle,
+      model,
       location: finalLocation,
-      basePrice,
-      distancePrice,
-      totalPrice,
+      preferredTime,
+      additionalDetails,
       status: "pending",
     });
 
     await booking.save();
 
-    // 🔔 Push notification to all providers
+    // Notify all providers of new request
     await User.updateMany(
       { usertype: "Service Provider" },
       {
         $push: {
           notifications: {
             message: `New ${service} request received`,
-            time: new Date(),
             read: false,
             bookingId: booking._id,
+            time: new Date(),
           },
         },
       }
     );
 
     return res.status(201).json({ message: "Booking created", booking });
+
   } catch (err) {
     console.log("BOOKING CREATE ERROR:", err);
-    return res.status(500).json({ message: "Error creating booking" });
+    res.status(500).json({ message: "Error creating booking" });
   }
 });
 
-
-
-
-// 🟦 Get all bookings for a user
+/* ------------------------------------
+   GET CUSTOMER BOOKINGS
+------------------------------------ */
 router.get("/my-bookings", authMiddleware, async (req, res) => {
   try {
     const bookings = await Booking.find({ customer: req.user.id }).sort({ createdAt: -1 });
     res.json(bookings);
-  } catch (error) {
-    console.error(error);
+  } catch (err) {
     res.status(500).json({ message: "Server error while fetching bookings" });
   }
 });
 
+/* ------------------------------------
+   CANCEL BOOKING
+------------------------------------ */
 router.put("/cancel/:id", authMiddleware, async (req, res) => {
   try {
-    const requestId = req.params.id;
-    const userId = req.user.id;
-
-    const booking = await Booking.findById(requestId);
-    console.log(booking)
+    const booking = await Booking.findById(req.params.id);
     if (!booking) return res.status(404).json({ message: "Booking not found" });
 
-    if (booking.customer.toString() !== userId.toString()) {
+    if (booking.customer.toString() !== req.user.id.toString())
       return res.status(403).json({ message: "Unauthorized Request" });
-    }
 
-    if (booking.status !== "pending") {
-      return res.status(400).json({ message: "Only pending bookings can be canceled" });
-    }
+    if (booking.status !== "pending")
+      return res.status(400).json({ message: "Only pending bookings can be cancelled" });
 
     booking.status = "Cancelled";
     await booking.save();
 
-    res.json({ message: "Booking Cancelled Successfully", booking });
+    res.json({ message: "Booking cancelled successfully", booking });
   } catch (err) {
     res.status(500).json({ message: "Server error" });
   }
 });
 
-router.post("/choose-provider/:id", authMiddleware, async (req, res) => {
-  try {
-    const { providerId, price } = req.body;
-
-    const booking = await Booking.findById(req.params.id);
-    if (!booking) return res.status(404).json({ message: "Booking not found" });
-
-    booking.assignedProvider = providerId;
-    booking.finalPrice = price;
-    booking.status = "accepted";
-    await booking.save();
-
-    res.json({ message: "Provider selected", booking });
-  } catch (err) {
-    res.status(500).json({ message: "Server error" });
-  }
-});
-
-// ⭐ Get all quotes for a booking (Customer View)
+/* ------------------------------------
+   Get ALL QUOTES for customer screen
+------------------------------------ */
 router.get("/quotes/:bookingId", authMiddleware, async (req, res) => {
   try {
     const booking = await Booking.findById(req.params.bookingId)
@@ -123,12 +98,91 @@ router.get("/quotes/:bookingId", authMiddleware, async (req, res) => {
 
     if (!booking) return res.status(404).json({ message: "Booking not found" });
 
-    res.json({ quotes: booking.quotes });
+    return res.json({ quotes: booking.quotes });
+
   } catch (err) {
-    console.error(err);
+    console.log(err);
     res.status(500).json({ message: "Server error fetching quotes" });
   }
 });
 
+/* ------------------------------------
+   CUSTOMER ACCEPT QUOTE
+------------------------------------ */
+router.post("/accept-quote", authMiddleware, async (req, res) => {
+  try {
+    const { bookingId, providerId } = req.body;
+
+    const booking = await Booking.findById(bookingId);
+    if (!booking) return res.status(404).json({ message: "Booking not found" });
+
+    let quoteFound = false;
+    booking.quotes = booking.quotes.map((quote) => {
+      if (quote.provider.toString() === providerId) {
+        quoteFound = true;
+        return { ...quote._doc, status: "accepted" };
+      }
+      return { ...quote._doc, status: "rejected" };
+    });
+
+    if (!quoteFound)
+      return res.status(400).json({ message: "Selected quote not found" });
+
+    booking.assignedProvider = providerId;
+    booking.status = "accepted";
+
+    await booking.save();
+
+    // 🔔 Notify selected provider
+    await User.findByIdAndUpdate(providerId, {
+      $push: {
+        notifications: {
+          message: `Customer accepted your quote for ${booking.service}`,
+          read: false,
+          time: new Date(),
+          bookingId: booking._id
+        }
+      }
+    });
+
+    res.json({ message: "Quote accepted successfully", booking });
+
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ message: "Error accepting quote" });
+  }
+});
+
+/* ------------------------------------
+   TRACK ORDER (Initial + Provider assigned)
+------------------------------------ */
+router.get("/track/:id", authMiddleware, async (req, res) => {
+  const booking = await Booking.findById(req.params.id)
+    .populate("assignedProvider", "name phone");
+
+  if (!booking) return res.status(404).json({ message: "Booking not found" });
+
+  res.json({
+    booking,
+    providerLocation: booking.providerLiveLocation || null,
+  });
+});
+
+/* ------------------------------------
+   LIVE LOCATION – customer fetches provider
+------------------------------------ */
+router.get("/location/:id", authMiddleware, async (req, res) => {
+  try {
+    const booking = await Booking.findById(req.params.id);
+
+    res.json({
+      customer: booking.location,
+      provider: booking.providerLiveLocation
+    });
+
+  } catch (err) {
+    res.status(500).json({ message: "Failed to fetch live location" });
+  }
+});
 
 export default router;

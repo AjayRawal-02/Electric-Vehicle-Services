@@ -14,7 +14,7 @@ app.use(express.json());
 
 // ✅ Connect MongoDB
 mongoose
-  .connect(process.env.MONGO_URI, {
+  .connect(process.env.MONGO_URI_ATLAS, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
   })
