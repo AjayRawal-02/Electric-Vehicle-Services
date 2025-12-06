@@ -12,7 +12,7 @@ const CustomerQuotes = () => {
     const token = localStorage.getItem("token");
     try {
       const res = await fetch(
-        `http://localhost:5000/api/bookings/quotes/${bookingId}`,
+        `https://electric-vehicle-services.onrender.com/api/bookings/quotes/${bookingId}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
@@ -33,7 +33,7 @@ const CustomerQuotes = () => {
   const acceptQuote = async (providerId) => {
     const token = localStorage.getItem("token");
 
-    const res = await fetch("http://localhost:5000/api/bookings/accept-quote", {
+    const res = await fetch("https://electric-vehicle-services.onrender.com/api/bookings/accept-quote", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

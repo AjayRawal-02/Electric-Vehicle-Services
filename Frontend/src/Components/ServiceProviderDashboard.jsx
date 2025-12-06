@@ -14,10 +14,10 @@ console.log("Token:", token);
   const fetchBookings = async () => {
     try {
       const [pendingRes, acceptedRes] = await Promise.all([
-        fetch("http://localhost:5000/api/provider/bookings/pending", {
+        fetch("https://electric-vehicle-services.onrender.com/api/provider/bookings/pending", {
           headers: { Authorization: `Bearer ${token}` },
         }),
-        fetch("http://localhost:5000/api/provider/bookings/accepted", {
+        fetch("https://electric-vehicle-services.onrender.com/api/provider/bookings/accepted", {
           headers: { Authorization: `Bearer ${token}` },
         }),
       ]);
@@ -46,7 +46,7 @@ console.log("Accepted API Response:", acceptedData);
   // Accept Booking
   const handleAccept = async (id) => {
     try {
-      const res = await fetch(`http://localhost:5000/api/provider/bookings/${id}/accept`, {
+      const res = await fetch(`https://electric-vehicle-services.onrender.com/api/provider/bookings/${id}/accept`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -74,7 +74,7 @@ console.log("Accepted API Response:", acceptedData);
   // Reject Booking
   const handleReject = async (id) => {
     try {
-      const res = await fetch(`http://localhost:5000/api/provider/bookings/${id}/reject`, {
+      const res = await fetch(`https://electric-vehicle-services.onrender.com/api/provider/bookings/${id}/reject`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

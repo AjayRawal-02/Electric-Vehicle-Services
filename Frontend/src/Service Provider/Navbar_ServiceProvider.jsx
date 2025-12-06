@@ -18,7 +18,7 @@ const fetchNotifications = async () => {
   const token = localStorage.getItem("token");
   if (!token) return;
 
-  const res = await fetch("http://localhost:5000/api/auth/notifications", {
+  const res = await fetch("https://electric-vehicle-services.onrender.com/api/auth/notifications", {
     headers: { Authorization: `Bearer ${token}` },
   });
 

@@ -11,7 +11,7 @@ const TrackOrder = ({ bookingId }) => {
 
   const fetchLocation = async () => {
     const token = localStorage.getItem("token");
-    const res = await fetch(`http://localhost:5000/api/bookings/location/${bookingId}`, {
+    const res = await fetch(`https://electric-vehicle-services.onrender.com/api/bookings/location/${bookingId}`, {
       headers: { Authorization: `Bearer ${token}` }
     });
     const data = await res.json();

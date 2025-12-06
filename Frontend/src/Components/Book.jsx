@@ -41,7 +41,7 @@ const Book = () => {
       // If other model selected → use custom model
       const finalModel = vehicleModel === "other" ? customModel : vehicleModel;
 
-      const response = await fetch("http://localhost:5000/api/bookings/create", {
+      const response = await fetch("https://electric-vehicle-services.onrender.com/api/bookings/create", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

@@ -9,7 +9,7 @@ useEffect(() => {
 const fetchRequests = async () => {
   const token = localStorage.getItem("token");
 
-  const res = await fetch("http://localhost:5000/api/provider/service-history", {
+  const res = await fetch("https://electric-vehicle-services.onrender.com/api/provider/service-history", {
     headers: { Authorization: `Bearer ${token}` }
   });
 

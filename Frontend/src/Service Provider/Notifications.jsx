@@ -8,7 +8,7 @@ const Notifications = () => {
   const fetchNotifications = async () => {
     const token = localStorage.getItem("token");
 
-    const res = await fetch("http://localhost:5000/api/auth/notifications", {
+    const res = await fetch("https://electric-vehicle-services.onrender.com/api/auth/notifications", {
       headers: { Authorization: `Bearer ${token}` },
     });
 
@@ -20,7 +20,7 @@ const Notifications = () => {
   const clearNotifications = async () => {
     const token = localStorage.getItem("token");
 
-    const res = await fetch("http://localhost:5000/api/auth/notifications/clear", {
+    const res = await fetch("https://electric-vehicle-services.onrender.com/api/auth/notifications/clear", {
       method: "PUT",
       headers: { Authorization: `Bearer ${token}` },
     });

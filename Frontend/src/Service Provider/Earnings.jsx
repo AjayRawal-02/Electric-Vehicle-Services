@@ -7,7 +7,7 @@ const Earnings = () => {
   const fetchEarnings = async () => {
     const token = localStorage.getItem("token");
 
-    const res = await fetch("http://localhost:5000/api/provider/earnings", {
+    const res = await fetch("https://electric-vehicle-services.onrender.com/api/provider/earnings", {
       headers: { Authorization: `Bearer ${token}` }
     });
 

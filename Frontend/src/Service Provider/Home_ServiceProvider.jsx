@@ -29,7 +29,7 @@ const Home_ServiceProvider = () => {
     const token = localStorage.getItem("token");
     try {
       const res = await fetch(
-        "http://localhost:5000/api/provider/bookings/pending",
+        "https://electric-vehicle-services.onrender.com/api/provider/bookings/pending",
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
@@ -46,7 +46,7 @@ const Home_ServiceProvider = () => {
   const handleAccept = async (id) => {
     const token = localStorage.getItem("token");
     const res = await fetch(
-      `http://localhost:5000/api/provider/bookings/${id}/accept`,
+      `https://electric-vehicle-services.onrender.com/api/provider/bookings/${id}/accept`,
       { method: "POST", headers: { Authorization: `Bearer ${token}` } }
     );
     const data = await res.json();
@@ -59,7 +59,7 @@ const Home_ServiceProvider = () => {
   const handleReject = async (id) => {
     const token = localStorage.getItem("token");
     const res = await fetch(
-      `http://localhost:5000/api/provider/bookings/${id}/reject`,
+      `https://electric-vehicle-services.onrender.com/api/provider/bookings/${id}/reject`,
       { method: "POST", headers: { Authorization: `Bearer ${token}` } }
     );
     const data = await res.json();
@@ -71,7 +71,7 @@ const Home_ServiceProvider = () => {
 
   const submitQuote = async (id, price) => {
   const token = localStorage.getItem("token");
-  const res = await fetch(`http://localhost:5000/api/provider/bookings/${id}/quote`, {
+  const res = await fetch(`https://electric-vehicle-services.onrender.com/api/provider/bookings/${id}/quote`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -87,7 +87,7 @@ const Home_ServiceProvider = () => {
 
 const fetchActiveJob = async () => {
   const token = localStorage.getItem("token");
-  const res = await fetch("http://localhost:5000/api/provider/active-job", {
+  const res = await fetch("https://electric-vehicle-services.onrender.com/api/provider/active-job", {
     headers: { Authorization: `Bearer ${token}` }
   });
 
@@ -103,7 +103,7 @@ const fetchActiveJob = async () => {
 const completeJob = async (id) => {
   const token = localStorage.getItem("token");
   const res = await fetch(
-    `http://localhost:5000/api/provider/active-job/complete/${id}`,
+    `https://electric-vehicle-services.onrender.com/api/provider/active-job/complete/${id}`,
     {
       method: "PUT",
       headers: { Authorization: `Bearer ${token}` }
@@ -122,7 +122,7 @@ const completeJob = async (id) => {
 
 const fetchSummary = async () => {
   const token = localStorage.getItem("token");
-  const res = await fetch("http://localhost:5000/api/provider/summary", {
+  const res = await fetch("https://electric-vehicle-services.onrender.com/api/provider/summary", {
     headers: { Authorization: `Bearer ${token}` },
   });
   const data = await res.json();
@@ -142,7 +142,7 @@ useEffect(() => {
   const interval = setInterval(() => {
     navigator.geolocation.getCurrentPosition(
       async (pos) => {
-        await fetch("http://localhost:5000/api/provider/update-location", {
+        await fetch("https://electric-vehicle-services.onrender.com/api/provider/update-location", {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",

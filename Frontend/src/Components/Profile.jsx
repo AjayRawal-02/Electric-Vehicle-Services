@@ -24,7 +24,7 @@ const Profile = () => {
     const token = localStorage.getItem("token");
 
     try {
-      const res = await fetch("http://localhost:5000/api/auth/profile", {
+      const res = await fetch("https://electric-vehicle-services.onrender.com/api/auth/profile", {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -67,7 +67,7 @@ const Profile = () => {
   if (imageFile) formData.append("photo", imageFile);
 
   try {
-    const res = await fetch("http://localhost:5000/api/auth/update-profile", {
+    const res = await fetch("https://electric-vehicle-services.onrender.com/api/auth/update-profile", {
       method: "PUT",
       headers: { Authorization: `Bearer ${token}` },
       body: formData,

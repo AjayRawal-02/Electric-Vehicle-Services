@@ -11,7 +11,7 @@ const ServiceProviderDashboard = () => {
   useEffect(() => {
     const fetchPending = async () => {
       try {
-        const res = await fetch("http://localhost:5000/api/provider/bookings/pending", {
+        const res = await fetch("https://electric-vehicle-services.onrender.com/api/provider/bookings/pending", {
           headers: { Authorization: `Bearer ${token}` },
         });
         const data = await res.json();
@@ -29,7 +29,7 @@ const ServiceProviderDashboard = () => {
 
   const handleAccept = async (id) => {
   try {
-    const res = await fetch(`http://localhost:5000/api/provider/bookings/${id}/accept`, {
+    const res = await fetch(`https://electric-vehicle-services.onrender.com/api/provider/bookings/${id}/accept`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -57,7 +57,7 @@ const ServiceProviderDashboard = () => {
 
   const handleReject = async (id) => {
   try {
-    const res = await fetch(`http://localhost:5000/api/provider/bookings/${id}/reject`, {
+    const res = await fetch(`https://electric-vehicle-services.onrender.com/api/provider/bookings/${id}/reject`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

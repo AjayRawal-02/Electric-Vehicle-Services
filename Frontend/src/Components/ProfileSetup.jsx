@@ -26,7 +26,7 @@ const ProfileSetup = () => {
     e.preventDefault();
 
     // Submit profile data to backend
-    const res = await fetch(`http://localhost:5000/api/users/${user.id}/profile`, {
+    const res = await fetch(`https://electric-vehicle-services.onrender.com/api/users/${user.id}/profile`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

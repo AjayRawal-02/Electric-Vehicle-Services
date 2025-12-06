@@ -20,7 +20,7 @@ const Navbar = () => {
     if (!token) return;
 
     const getNotifications = () => {
-      fetch("http://localhost:5000/api/auth/notifications", {
+      fetch("https://electric-vehicle-services.onrender.com/api/auth/notifications", {
         headers: { Authorization: `Bearer ${token}` }
       })
         .then(res => res.json())
@@ -83,7 +83,7 @@ const Navbar = () => {
               // Mark notifications as read when dropdown opens
               if (!notifyDropdown) {
                 const token = localStorage.getItem("token");
-                fetch("http://localhost:5000/api/auth/notifications/read", {
+                fetch("https://electric-vehicle-services.onrender.com/api/auth/notifications/read", {
                   method: "PUT",
                   headers: { Authorization: `Bearer ${token}` }
                 }).then(() => {
@@ -154,7 +154,7 @@ const Navbar = () => {
               // Mark notifications as read when dropdown opens
               if (!notifyDropdown) {
                 const token = localStorage.getItem("token");
-                fetch("http://localhost:5000/api/auth/notifications/read", {
+                fetch("https://electric-vehicle-services.onrender.com/api/auth/notifications/read", {
                   method: "PUT",
                   headers: { Authorization: `Bearer ${token}` }
                 }).then(() => {

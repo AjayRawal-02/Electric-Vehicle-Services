@@ -16,7 +16,7 @@ const MyBookings = () => {
     }
 
     try {
-      const res = await fetch("http://localhost:5000/api/bookings/my-bookings", {
+      const res = await fetch("https://electric-vehicle-services.onrender.com/api/bookings/my-bookings", {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -47,7 +47,7 @@ const MyBookings = () => {
 console.log(token)
 console.log(bookingId)
   try {
-    const res = await fetch(`http://localhost:5000/api/bookings/cancel/${bookingId}`, {
+    const res = await fetch(`https://electric-vehicle-services.onrender.com/api/bookings/cancel/${bookingId}`, {
       method: "PUT",
       headers: { Authorization: `Bearer ${token}` },
     });
