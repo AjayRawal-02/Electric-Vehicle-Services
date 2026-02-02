@@ -218,4 +218,53 @@ router.get("/otp/:bookingId", authMiddleware, async (req, res) => {
   }
 });
 
+// CUSTOMER ACCEPTS A PROVIDER QUOTE
+router.post("/choose-provider/:bookingId", authMiddleware, async (req, res) => {
+  try {
+    const { providerId, price, paymentMode } = req.body;
+    const { bookingId } = req.params;
+
+    const booking = await Booking.findById(bookingId);
+    if (!booking)
+      return res.status(404).json({ message: "Booking not found" });
+
+    // 1️⃣ Update quote statuses
+    booking.quotes = booking.quotes.map((q) => {
+      if (q.provider.toString() === providerId) {
+        return { ...q._doc, status: "accepted" };
+      }
+      return { ...q._doc, status: "rejected" };
+    });
+
+    // 2️⃣ Assign provider & activate job
+    booking.assignedProvider = providerId;
+    booking.finalPrice = price;
+    booking.paymentMode = paymentMode || "cash";
+    booking.status = "accepted";          // 🔥 THIS MAKES ACTIVE JOB
+    booking.activeStartTime = new Date();
+
+    await booking.save();
+
+    // 3️⃣ Notify provider
+    await User.findByIdAndUpdate(providerId, {
+      $push: {
+        notifications: {
+          message: `Customer accepted your quote for ${booking.service}`,
+          bookingId: booking._id,
+          time: new Date(),
+          read: false,
+        },
+      },
+    });
+
+    res.json({
+      message: "Provider selected successfully",
+      booking,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Error selecting provider" });
+  }
+});
+
 export default router;
