@@ -407,18 +407,14 @@ router.post("/request-otp/:bookingId", authMiddleware, requireProvider, async (r
     if (booking.assignedProvider.toString() !== req.user.id)
       return res.status(403).json({ message: "Unauthorized" });
 
-    // Generate 4-digit OTP
-    const otp = Math.floor(1000 + Math.random() * 9000).toString();
+    // Generate OTP only ONCE
+    if (!booking.completionOTP) {
+      booking.completionOTP = Math.floor(1000 + Math.random() * 9000).toString();
+      booking.status = "waiting_customer_verification";
+      await booking.save();
+    }
 
-    booking.completionOTP = otp;
-    booking.otpExpiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 mins
-    booking.status = "waiting_customer_verification";
-
-    await booking.save();
-
-    res.json({
-      message: "OTP generated successfully",
-    });
+    res.json({ message: "OTP generated successfully" });
 
   } catch (err) {
     console.log(err);
@@ -429,7 +425,6 @@ router.post("/request-otp/:bookingId", authMiddleware, requireProvider, async (r
 router.post("/verify-otp/:bookingId", authMiddleware, requireProvider, async (req, res) => {
   try {
     const { otp } = req.body;
-
     const booking = await Booking.findById(req.params.bookingId);
 
     if (!booking)
@@ -438,17 +433,12 @@ router.post("/verify-otp/:bookingId", authMiddleware, requireProvider, async (re
     if (booking.assignedProvider.toString() !== req.user.id)
       return res.status(403).json({ message: "Unauthorized" });
 
-    if (
-      booking.completionOTP !== otp ||
-      new Date() > booking.otpExpiresAt
-    ) {
-      return res.status(400).json({ message: "Invalid or expired OTP" });
-    }
+    if (booking.completionOTP !== otp)
+      return res.status(400).json({ message: "Invalid OTP" });
 
+    // ✅ Mark job completed
     booking.status = "completed";
-    booking.completionOTP = null;
-    booking.otpExpiresAt = null;
-
+    booking.completionOTP = null; // 🔥 clear OTP forever
     await booking.save();
 
     res.json({ message: "Job completed successfully" });
@@ -458,5 +448,6 @@ router.post("/verify-otp/:bookingId", authMiddleware, requireProvider, async (re
     res.status(500).json({ message: "OTP verification failed" });
   }
 });
+
 
 export default router;
