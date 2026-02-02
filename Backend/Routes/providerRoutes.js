@@ -222,23 +222,57 @@ router.get("/active-job", authMiddleware, async (req, res) => {
 
 
 // 📌 Mark job completed
-router.put("/active-job/complete/:id", authMiddleware, requireProvider, async (req, res) => {
-  try {
-    const job = await Booking.findById(req.params.id);
+// router.put("/active-job/complete/:id", authMiddleware, requireProvider, async (req, res) => {
+//   try {
+//     const job = await Booking.findById(req.params.id);
 
-    if (!job) return res.status(404).json({ message: "Booking not found" });
-    if (job.assignedProvider.toString() !== req.user.id)
-      return res.status(403).json({ message: "Unauthorized" });
+//     if (!job) return res.status(404).json({ message: "Booking not found" });
+//     if (job.assignedProvider.toString() !== req.user.id)
+//       return res.status(403).json({ message: "Unauthorized" });
 
-    job.status = "completed";
-    await job.save();
+//     job.status = "completed";
+//     await job.save();
 
-    res.json({ message: "Job completed successfully", job });
-  } catch (error) {
-    console.log(error);
-    res.status(500).json({ message: "Failed to mark completed" });
+//     res.json({ message: "Job completed successfully", job });
+//   } catch (error) {
+//     console.log(error);
+//     res.status(500).json({ message: "Failed to mark completed" });
+//   }
+// });
+
+// ✅ STEP 1: Provider requests OTP (instead of completing directly)
+router.put(
+  "/active-job/request-otp/:id",
+  authMiddleware,
+  requireProvider,
+  async (req, res) => {
+    try {
+      const booking = await Booking.findById(req.params.id);
+
+      if (!booking)
+        return res.status(404).json({ message: "Booking not found" });
+
+      if (booking.assignedProvider.toString() !== req.user.id)
+        return res.status(403).json({ message: "Unauthorized" });
+
+      // 🔐 Generate 4-digit OTP
+      const otp = Math.floor(1000 + Math.random() * 9000).toString();
+
+      booking.completionOTP = otp;
+      booking.otpExpiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+      booking.status = "waiting_customer_verification";
+
+      await booking.save();
+
+      res.json({
+        message: "OTP generated successfully",
+      });
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ message: "Failed to generate OTP" });
+    }
   }
-});
+);
 
 router.get("/summary", authMiddleware, requireProvider, async (req, res) => {
   try {
@@ -362,5 +396,98 @@ router.put("/update-location", authMiddleware, requireProvider, async (req, res)
   }
 });
 
+// router.post("/request-completion-otp/:id", authMiddleware, async (req, res) => {
+//   try {
+//     const booking = await Booking.findById(req.params.id);
+//     if (!booking) return res.status(404).json({ message: "Booking not found" });
+
+//     // Generate 4-digit OTP
+//     const otp = Math.floor(1000 + Math.random() * 9000).toString();
+
+//     booking.completionOTP = otp;
+//     booking.otpExpiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 min
+//     booking.status = "waiting_confirmation";
+
+//     await booking.save();
+
+//     // 🔔 Notify customer (SMS/Email later)
+//     await User.findByIdAndUpdate(booking.customer, {
+//       $push: {
+//         notifications: {
+//           message: `Your service OTP is ${otp}`,
+//           bookingId: booking._id,
+//           time: new Date(),
+//           read: false
+//         }
+//       }
+//     });
+
+//     res.json({ message: "OTP generated successfully" });
+//   } catch (err) {
+//     res.status(500).json({ message: "OTP generation failed" });
+//   }
+// });
+
+router.post("/request-otp/:bookingId", authMiddleware, requireProvider, async (req, res) => {
+  try {
+    const booking = await Booking.findById(req.params.bookingId);
+
+    if (!booking)
+      return res.status(404).json({ message: "Booking not found" });
+
+    if (booking.assignedProvider.toString() !== req.user.id)
+      return res.status(403).json({ message: "Unauthorized" });
+
+    // Generate 4-digit OTP
+    const otp = Math.floor(1000 + Math.random() * 9000).toString();
+
+    booking.completionOTP = otp;
+    booking.otpExpiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 mins
+    booking.status = "waiting_customer_verification";
+
+    await booking.save();
+
+    res.json({
+      message: "OTP generated successfully",
+    });
+
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ message: "OTP generation failed" });
+  }
+});
+
+router.post("/verify-otp/:bookingId", authMiddleware, requireProvider, async (req, res) => {
+  try {
+    const { otp } = req.body;
+
+    const booking = await Booking.findById(req.params.bookingId);
+
+    if (!booking)
+      return res.status(404).json({ message: "Booking not found" });
+
+    if (booking.assignedProvider.toString() !== req.user.id)
+      return res.status(403).json({ message: "Unauthorized" });
+
+    if (
+      booking.completionOTP !== otp ||
+      new Date() > booking.otpExpiresAt
+    ) {
+      return res.status(400).json({ message: "Invalid or expired OTP" });
+    }
+
+    booking.status = "completed";
+    booking.completionOTP = null;
+    booking.otpExpiresAt = null;
+
+    await booking.save();
+
+    res.json({ message: "Job completed successfully" });
+
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ message: "OTP verification failed" });
+  }
+});
 
 export default router;

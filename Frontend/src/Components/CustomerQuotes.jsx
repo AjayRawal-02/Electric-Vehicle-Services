@@ -7,6 +7,9 @@ const CustomerQuotes = () => {
   const navigate = useNavigate();
   const [quotes, setQuotes] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [selectedPayment, setSelectedPayment] = useState(null);
+const [selectedQuote, setSelectedQuote] = useState(null);
+
 
   const fetchQuotes = async () => {
     const token = localStorage.getItem("token");
@@ -30,24 +33,32 @@ const CustomerQuotes = () => {
   }, []);
 
   // ⬅⬅ Correct Accept Quote
-  const acceptQuote = async (providerId) => {
-    const token = localStorage.getItem("token");
+  const acceptQuote = async (bookingId, providerId, paymentMode) => {
+  const token = localStorage.getItem("token");
 
-    const res = await fetch("https://electric-vehicle-services.onrender.com/api/bookings/accept-quote", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({ bookingId, providerId }),
-    });
+  const res = await fetch("https://electric-vehicle-services.onrender.com/api/bookings/accept-quote", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`
+    },
+    body: JSON.stringify({
+      bookingId,
+      providerId,
+      paymentMode
+    })
+  });
 
-    const data = await res.json();
-    if (!res.ok) return toast.error(data.message);
+  const data = await res.json();
 
-    toast.success("Quote Accepted!");
-    navigate("/my-bookings"); // ⭐ redirect after customer accepts
-  };
+  if (res.ok) {
+    toast.success("Quote accepted!");
+    navigate(`/track/${bookingId}`); // 🔥 go to active job
+  } else {
+    toast.error(data.message);
+  }
+};
+
 
   if (loading)
     return <h2 className="text-center mt-10 text-lg">Loading quotes...</h2>;
@@ -73,15 +84,53 @@ const CustomerQuotes = () => {
               <span className="text-red-600 font-semibold">✖ Rejected</span>
             ) : (
               <button
-                onClick={() => acceptQuote(q.provider._id)}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded mt-2"
-              >
-                Accept Quote
-              </button>
+  onClick={() => setSelectedQuote(q)}
+  className="bg-blue-600 text-white px-3 py-1 rounded mt-2"
+>
+  Accept Quote
+</button>
+
             )}
           </div>
         ))}
       </div>
+      {selectedQuote && (
+  <div className="bg-white p-4 rounded shadow mt-6">
+    <h3 className="font-semibold text-lg mb-3">Choose Payment Method</h3>
+
+    <div className="space-y-3">
+      <label className="flex items-center gap-2">
+        <input
+          type="radio"
+          name="payment"
+          value="cash"
+          onChange={() => setSelectedPayment("cash")}
+        />
+        Cash on Service
+      </label>
+
+      <label className="flex items-center gap-2 text-gray-400">
+        <input type="radio" disabled />
+        Online Payment (Coming Soon 🚧)
+      </label>
+    </div>
+
+    <button
+      disabled={!selectedPayment}
+      onClick={() =>
+        acceptQuote(
+          bookingId,
+          selectedQuote.provider._id,
+          selectedPayment
+        )
+      }
+      className="mt-4 bg-green-600 text-white px-4 py-2 rounded disabled:opacity-50"
+    >
+      Confirm & Continue
+    </button>
+  </div>
+)}
+
     </div>
   );
 };

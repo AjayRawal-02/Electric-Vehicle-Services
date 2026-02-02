@@ -3,11 +3,13 @@ import Booking from "../Models/Booking.js";
 import authMiddleware from "../Middleware/authMiddleware.js";
 import User from "../Models/User.js";
 
+
 const router = express.Router();
 
 /* ------------------------------------
    CREATE BOOKING (Customer)
 ------------------------------------ */
+
 router.post("/create", authMiddleware, async (req, res) => {
   try {
     const { service, location, preferredTime, additionalDetails, vehicle, model } = req.body;
@@ -111,47 +113,38 @@ router.get("/quotes/:bookingId", authMiddleware, async (req, res) => {
 ------------------------------------ */
 router.post("/accept-quote", authMiddleware, async (req, res) => {
   try {
-    const { bookingId, providerId } = req.body;
+    const { bookingId, providerId, paymentMode } = req.body;
 
     const booking = await Booking.findById(bookingId);
     if (!booking) return res.status(404).json({ message: "Booking not found" });
 
-    let quoteFound = false;
-    booking.quotes = booking.quotes.map((quote) => {
-      if (quote.provider.toString() === providerId) {
-        quoteFound = true;
-        return { ...quote._doc, status: "accepted" };
+    // Update quotes
+    booking.quotes = booking.quotes.map(q => {
+      if (q.provider.toString() === providerId) {
+        return { ...q._doc, status: "accepted" };
       }
-      return { ...quote._doc, status: "rejected" };
+      return { ...q._doc, status: "rejected" };
     });
 
-    if (!quoteFound)
-      return res.status(400).json({ message: "Selected quote not found" });
-
+    // Assign provider + payment mode
     booking.assignedProvider = providerId;
-    booking.status = "accepted";
+    booking.paymentMode = paymentMode;     // 🔥 NEW
+    booking.paymentStatus = "pending";     // 🔥 NEW
+    booking.status = "active";              // job starts
 
     await booking.save();
 
-    // 🔔 Notify selected provider
-    await User.findByIdAndUpdate(providerId, {
-      $push: {
-        notifications: {
-          message: `Customer accepted your quote for ${booking.service}`,
-          read: false,
-          time: new Date(),
-          bookingId: booking._id
-        }
-      }
+    res.json({
+      message: "Quote accepted & payment mode saved",
+      booking
     });
-
-    res.json({ message: "Quote accepted successfully", booking });
 
   } catch (err) {
     console.log(err);
     res.status(500).json({ message: "Error accepting quote" });
   }
 });
+
 
 /* ------------------------------------
    TRACK ORDER (Initial + Provider assigned)
@@ -182,6 +175,46 @@ router.get("/location/:id", authMiddleware, async (req, res) => {
 
   } catch (err) {
     res.status(500).json({ message: "Failed to fetch live location" });
+  }
+});
+
+// router.post("/provider/verify-otp/:id", authMiddleware, async (req, res) => {
+//   const { otp } = req.body;
+//   const booking = await Booking.findById(req.params.id);
+
+//   if (!booking) return res.status(404).json({ message: "Booking not found" });
+
+//   if (booking.otp !== otp)
+//     return res.status(400).json({ message: "Invalid OTP" });
+
+//   booking.status = "completed";
+//   await booking.save();
+
+//   res.json({ message: "Job completed" });
+// });
+
+// 🔐 Customer fetch OTP
+router.get("/otp/:bookingId", authMiddleware, async (req, res) => {
+  try {
+    const booking = await Booking.findById(req.params.bookingId);
+
+    if (!booking)
+      return res.status(404).json({ message: "Booking not found" });
+
+    if (booking.customer.toString() !== req.user.id)
+      return res.status(403).json({ message: "Unauthorized" });
+
+    if (booking.status !== "waiting_customer_verification")
+      return res.json({ otp: null });
+
+    res.json({
+      otp: booking.completionOTP,
+      expiresAt: booking.otpExpiresAt,
+    });
+
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ message: "Failed to fetch OTP" });
   }
 });
 

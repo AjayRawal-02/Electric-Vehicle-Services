@@ -22,7 +22,20 @@ const bookingSchema = new mongoose.Schema({
     lat: { type: Number, default: null },
     lng: { type: Number, default: null }
   },
+  finalPrice: Number,
 
+  // NEW fields:
+ paymentMode: {
+  type: String,
+  enum: ["cash", "online"],
+  default: null
+},
+paymentStatus: {
+  type: String,
+  enum: ["pending", "paid"],
+  default: "pending"
+}
+,
   preferredTime: Date,
   status: { type: String, default: "pending" },  // pending → quotes → accepted → completed
 
@@ -33,7 +46,15 @@ const bookingSchema = new mongoose.Schema({
       status: { type: String, default: "pending" }
     }
   ],
-
+completionOTP: {
+  type: String,
+  default: null
+},
+otpExpiresAt: {
+  type: Date,
+  default: null
+}
+,
   assignedProvider: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
   finalPrice: Number
 }, { timestamps: true });

@@ -2,10 +2,6 @@ import React, { useState } from 'react'
 import { toast } from 'react-hot-toast';
 import { Navigate, useNavigate } from 'react-router-dom';
 
-
-
-
-
 const Signup = ({ setLogin }) => {
      const navigate = useNavigate();
   const [ViewPassword, setViewPassword] = useState(false);

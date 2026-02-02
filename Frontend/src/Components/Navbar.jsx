@@ -133,7 +133,7 @@ const Navbar = () => {
             <button onClick={() => handleProtectedClick("/my-bookings")}>My Bookings</button>
           </li>
           <li className="hover:text-blue-700">
-            <button onClick={() => handleProtectedClick("/support")}>Support</button>
+            <button onClick={() => handleProtectedClick("/help")}>Help</button>
           </li>
 
           <li>
@@ -248,7 +248,7 @@ const Navbar = () => {
             <li><Link to="/" onClick={() => setMenuOpen(false)}>Home</Link></li>
             <li><a href="#services">Services</a></li>
             <li><button onClick={() => handleProtectedClick("/my-bookings")}>My Bookings</button></li>
-            <li><button onClick={() => handleProtectedClick("/support")}>Support</button></li>
+            <li><button onClick={() => handleProtectedClick("/help")}>Help</button></li>
 
             {user && (
               <li onClick={handleLogout} className="hover:text-red-600 cursor-pointer">Logout</li>

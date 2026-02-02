@@ -65,7 +65,7 @@ const fetchNotifications = async () => {
           <li><button onClick={() => handleProtectedClick("/")}>Home</button></li>
           <li><button onClick={() => handleProtectedClick("/service-requests")}>Service Requests</button></li>
           <li><button onClick={() => handleProtectedClick("/earnings")}>My Earnings</button></li>
-          <li><button onClick={() => handleProtectedClick("/support")}>Support</button></li>
+          <li><button onClick={() => handleProtectedClick("/service-provider/help")}>Help</button></li>
 
           <li className="relative cursor-pointer" onClick={() => navigate("/notifications")}>
   <i className="fa-regular fa-bell bg-gray-100 p-2 rounded"></i>
@@ -125,7 +125,7 @@ const fetchNotifications = async () => {
             )}
             <li><button onClick={() => handleProtectedClick("/service-requests")}>Service Requests</button></li>
             <li><button onClick={() => handleProtectedClick("/earnings")}>My Earnings</button></li>
-            <li><button onClick={() => handleProtectedClick("/support")}>Support</button></li>
+            <li><button onClick={() => handleProtectedClick("/service-provider/help")}>Help</button></li>
             {user && <li onClick={handleLogout} className="hover:text-red-600 cursor-pointer">Logout</li>}
           </ul>
         </div>

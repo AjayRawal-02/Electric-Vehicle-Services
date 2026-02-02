@@ -1,302 +1,334 @@
 import React, { useEffect, useState } from "react";
 import { toast } from "react-hot-toast";
+import { useNavigate } from "react-router-dom";
 
 const Home_ServiceProvider = () => {
+  const navigate = useNavigate();
+
   const [username, setUsername] = useState("");
   const [liveRequests, setLiveRequests] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [price, setPrice] = useState({});
   const [activeJob, setActiveJob] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  const [price, setPrice] = useState({});
+  const [otp, setOtp] = useState("");
+
   const [summary, setSummary] = useState({
-  newRequests: 0,
-  activeJobs: 0,
-  earningsToday: 0,
-  rating: 0,
-});
+    newRequests: 0,
+    activeJobs: 0,
+    earningsToday: 0,
+    rating: 0,
+  });
 
-
+  /* -------------------- INIT -------------------- */
   useEffect(() => {
-    const u = localStorage.getItem("user");
-    if (u) {
-      const parsed = JSON.parse(u);
-      setUsername(parsed.name);
-    }
+    const user = localStorage.getItem("user");
+    if (user) setUsername(JSON.parse(user).name);
 
     fetchLiveRequests();
+    fetchActiveJob();
+    fetchSummary();
   }, []);
 
+  /* -------------------- FETCH REQUESTS -------------------- */
   const fetchLiveRequests = async () => {
-    const token = localStorage.getItem("token");
     try {
+      const token = localStorage.getItem("token");
       const res = await fetch(
         "https://electric-vehicle-services.onrender.com/api/provider/bookings/pending",
         { headers: { Authorization: `Bearer ${token}` } }
+      );
+      const data = await res.json();
+
+      if (!res.ok) return toast.error(data.message);
+      setLiveRequests(data);
+    } catch {
+      toast.error("Failed to load requests");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  /* -------------------- SUBMIT QUOTE -------------------- */
+  const submitQuote = async (bookingId, amount) => {
+    if (!amount) return toast.error("Enter quote amount");
+
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(
+        `https://electric-vehicle-services.onrender.com/api/provider/bookings/${bookingId}/quote`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ price: amount }),
+        }
       );
 
       const data = await res.json();
       if (!res.ok) return toast.error(data.message);
 
-      setLiveRequests(data);
+      toast.success("Quote sent successfully");
+      setPrice((p) => ({ ...p, [bookingId]: "" }));
+      fetchLiveRequests();
     } catch {
-      toast.error("Failed to load requests");
+      toast.error("Failed to send quote");
     }
-    setLoading(false);
   };
 
-  const handleAccept = async (id) => {
-    const token = localStorage.getItem("token");
-    const res = await fetch(
-      `https://electric-vehicle-services.onrender.com/api/provider/bookings/${id}/accept`,
-      { method: "POST", headers: { Authorization: `Bearer ${token}` } }
-    );
-    const data = await res.json();
-    if (!res.ok) return toast.error(data.message);
-
-    toast.success("Booking Accepted");
-    fetchLiveRequests(); // refresh list
-  };
-
+  /* -------------------- REJECT -------------------- */
   const handleReject = async (id) => {
-    const token = localStorage.getItem("token");
-    const res = await fetch(
-      `https://electric-vehicle-services.onrender.com/api/provider/bookings/${id}/reject`,
-      { method: "POST", headers: { Authorization: `Bearer ${token}` } }
-    );
-    const data = await res.json();
-    if (!res.ok) return toast.error(data.message);
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(
+        `https://electric-vehicle-services.onrender.com/api/provider/bookings/${id}/reject`,
+        { method: "POST", headers: { Authorization: `Bearer ${token}` } }
+      );
+      const data = await res.json();
+      if (!res.ok) return toast.error(data.message);
 
-    toast.success("Booking Rejected");
-    fetchLiveRequests(); // refresh list
+      toast.success("Request rejected");
+      fetchLiveRequests();
+    } catch {
+      toast.error("Reject failed");
+    }
   };
 
-  const submitQuote = async (id, price) => {
+  /* -------------------- ACTIVE JOB -------------------- */
+  const fetchActiveJob = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(
+        "https://electric-vehicle-services.onrender.com/api/provider/active-job",
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      const data = await res.json();
+      setActiveJob(data.job || null);
+    } catch {
+      toast.error("Failed to load active job");
+    }
+  };
+
+  /* -------------------- OTP VERIFY -------------------- */
+  const verifyOTP = async (bookingId) => {
+    if (!otp) return toast.error("Enter OTP");
+
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(
+        `https://electric-vehicle-services.onrender.com/api/provider/verify-otp/${bookingId}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ otp }),
+        }
+      );
+
+      const data = await res.json();
+      if (!res.ok) return toast.error(data.message);
+
+      toast.success("Job completed successfully");
+      setOtp("");
+      setActiveJob(null);
+      fetchLiveRequests();
+      fetchSummary();
+    } catch {
+      toast.error("OTP verification failed");
+    }
+  };
+
+  /* -------------------- SUMMARY -------------------- */
+  const fetchSummary = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(
+        "https://electric-vehicle-services.onrender.com/api/provider/summary",
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      const data = await res.json();
+      setSummary(data);
+    } catch {}
+  };
+
+  /* -------------------- LIVE LOCATION -------------------- */
+  useEffect(() => {
+    if (!activeJob) return;
+
+    const token = localStorage.getItem("token");
+    const interval = setInterval(() => {
+      navigator.geolocation.getCurrentPosition(async (pos) => {
+        await fetch(
+          "https://electric-vehicle-services.onrender.com/api/provider/update-location",
+          {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({
+              lat: pos.coords.latitude,
+              lng: pos.coords.longitude,
+              bookingId: activeJob._id,
+            }),
+          }
+        );
+      });
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [activeJob]);
+
+  const requestCompletionOTP = async (bookingId) => {
   const token = localStorage.getItem("token");
-  const res = await fetch(`https://electric-vehicle-services.onrender.com/api/provider/bookings/${id}/quote`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`
-    },
-    body: JSON.stringify({ price })
-  });
 
-  const data = await res.json();
-  if (res.ok) toast.success("Quote sent!");
-  else toast.error(data.message);
-};
-
-const fetchActiveJob = async () => {
-  const token = localStorage.getItem("token");
-  const res = await fetch("https://electric-vehicle-services.onrender.com/api/provider/active-job", {
-    headers: { Authorization: `Bearer ${token}` }
-  });
-
-  const data = await res.json();
-  setActiveJob(data.job);
-};
-
-// useEffect(() => {
-//   fetchLiveRequests();
-//   fetchActiveJob();   // ⬅ add here
-// }, []);
-
-const completeJob = async (id) => {
-  const token = localStorage.getItem("token");
   const res = await fetch(
-    `https://electric-vehicle-services.onrender.com/api/provider/active-job/complete/${id}`,
+    `https://electric-vehicle-services.onrender.com/api/provider/active-job/request-otp/${bookingId}`,
     {
       method: "PUT",
-      headers: { Authorization: `Bearer ${token}` }
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
     }
   );
 
   const data = await res.json();
+
   if (res.ok) {
-    toast.success("Job Completed");
-    setActiveJob(null);
-    fetchLiveRequests(); // refresh UI
+    toast.success("OTP sent to customer");
+    fetchActiveJob(); // refresh job status
   } else {
     toast.error(data.message);
   }
 };
 
-const fetchSummary = async () => {
-  const token = localStorage.getItem("token");
-  const res = await fetch("https://electric-vehicle-services.onrender.com/api/provider/summary", {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  const data = await res.json();
-  setSummary(data);
-};
-useEffect(() => {
-  fetchLiveRequests();
-  fetchActiveJob();
-  fetchSummary();   // ⬅ NEW
-}, []);
-
-// 🔥 Send Live GPS location every 5 sec when active job exists
-useEffect(() => {
-  if (!activeJob) return;
-  const token = localStorage.getItem("token");
-
-  const interval = setInterval(() => {
-    navigator.geolocation.getCurrentPosition(
-      async (pos) => {
-        await fetch("https://electric-vehicle-services.onrender.com/api/provider/update-location", {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`
-          },
-          body: JSON.stringify({
-            lat: pos.coords.latitude,
-            lng: pos.coords.longitude,
-            bookingId: activeJob._id
-          })
-        });
-      },
-      () => console.log("Location permission denied")
-    );
-  }, 5000);
-
-  return () => clearInterval(interval);
-}, [activeJob]);
-
-
+  /* -------------------- UI -------------------- */
   return (
-    <div className="p-5 sm:p-8 bg-[#f7fafb] min-h-screen">
-      {/* Greeting */}
-      <h1 className="text-3xl font-semibold text-gray-900">
-        Welcome back, {username} 👋
-      </h1>
-      <p className="text-gray-500 mt-1">
-        Dedicated to helping EV users — you're on duty today 🚗⚡
-      </p>
+    <div className="p-6 bg-[#f7fafb] min-h-screen">
+      <h1 className="text-3xl font-semibold">Welcome back, {username} 👋</h1>
 
-     {/* Summary Cards */}
-<div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-6">
-
-  <div className="bg-white p-4 rounded-lg shadow-md text-center">
-    <h2 className="text-xl font-bold text-blue-700">{summary.newRequests}</h2>
-    <p className="text-gray-600 text-sm">New Requests</p>
-  </div>
-
-  <div className="bg-white p-4 rounded-lg shadow-md text-center">
-    <h2 className="text-xl font-bold text-blue-700">{summary.activeJobs}</h2>
-    <p className="text-gray-600 text-sm">Active Jobs</p>
-  </div>
-
-  <div className="bg-white p-4 rounded-lg shadow-md text-center">
-    <h2 className="text-xl font-bold text-blue-700">₹{summary.earningsToday}</h2>
-    <p className="text-gray-600 text-sm">Earnings (Today)</p>
-  </div>
-
-  <div className="bg-white p-4 rounded-lg shadow-md text-center">
-    <h2 className="text-xl font-bold text-blue-700">{summary.rating} ★</h2>
-    <p className="text-gray-600 text-sm">Rating</p>
-  </div>
-
-</div>
-
-
-      {/* Live Requests */}
-      {/* Live Requests */}
-<h2 className="text-xl font-semibold mt-8 mb-3">Live Service Requests</h2>
-{loading ? (
-  <p>Loading requests...</p>
-) : liveRequests.length === 0 ? (
-  <p className="text-gray-600">No new requests right now</p>
-) : (
-  <div className="grid gap-4">
-  {liveRequests.map((req) => (
-    <div key={req._id} className="bg-white p-4 rounded-lg shadow-md">
-      <h3 className="font-semibold text-blue-700">{req.service}</h3>
-
-      <p className="text-sm text-gray-600 mt-1">
-        Customer: {req.customer.name} • {req.distance} km away
-      </p>
-
-      {/* Problem details */}
-      {req.additionalDetails && (
-        <p className="text-gray-700 text-sm bg-gray-100 p-2 rounded mt-2">
-          <b>Issue:</b> {req.additionalDetails}
-        </p>
-      )}
-
-      {/* PRICE INPUT */}
-      <div className="flex gap-2 mt-3">
-        <input
-          type="number"
-          className="border p-2 rounded w-40"
-          placeholder="Enter your quote (₹)"
-          value={price[req._id] || ""}
-          onChange={(e) =>
-            setPrice((prev) => ({ ...prev, [req._id]: e.target.value }))
-          }
-        />
-        <button
-          onClick={() => submitQuote(req._id, price[req._id])}
-          className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md"
-        >
-          Send Quote
-        </button>
+      {/* SUMMARY */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-6">
+        {[
+          ["New Requests", summary.newRequests],
+          ["Active Jobs", summary.activeJobs],
+          ["Earnings Today", `₹${summary.earningsToday}`],
+          ["Rating", `${summary.rating} ★`],
+        ].map(([label, value]) => (
+          <div key={label} className="bg-white p-4 rounded shadow text-center">
+            <h2 className="text-xl font-bold text-blue-700">{value}</h2>
+            <p className="text-gray-600 text-sm">{label}</p>
+          </div>
+        ))}
       </div>
 
-      {/* Reject Only */}
-      <button
-        onClick={() => handleReject(req._id)}
-        className="mt-3 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md"
-      >
-        Reject
-      </button>
-    </div>
-  ))}
-</div>
+      {/* LIVE REQUESTS */}
+      <h2 className="text-xl font-semibold mt-8 mb-3">Live Service Requests</h2>
 
+      {loading ? (
+        <p>Loading...</p>
+      ) : liveRequests.length === 0 ? (
+        <p>No new requests</p>
+      ) : (
+        <div className="grid gap-4">
+          {liveRequests.map((req) => (
+            <div key={req._id} className="bg-white p-4 rounded shadow">
+              <h3 className="font-semibold text-blue-700">{req.service}</h3>
+              <p className="text-sm text-gray-600">
+                Customer: {req.customer.name}
+              </p>
+
+              {req.additionalDetails && (
+                <p className="bg-gray-100 p-2 mt-2 rounded text-sm">
+                  <b>Issue:</b> {req.additionalDetails}
+                </p>
+              )}
+
+              <div className="flex gap-2 mt-3">
+                <input
+                  type="number"
+                  placeholder="Enter quote ₹"
+                  className="border p-2 rounded w-40"
+                  value={price[req._id] || ""}
+                  onChange={(e) =>
+                    setPrice({ ...price, [req._id]: e.target.value })
+                  }
+                />
+                <button
+                  onClick={() => submitQuote(req._id, price[req._id])}
+                  className="bg-green-600 text-white px-4 rounded"
+                >
+                  Send Quote
+                </button>
+              </div>
+
+              <button
+                onClick={() => handleReject(req._id)}
+                className="mt-3 bg-red-600 text-white px-4 py-1 rounded"
+              >
+                Reject
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* ACTIVE JOB */}
+      <h2 className="text-xl font-semibold mt-8 mb-3">Active Job</h2>
+
+      {activeJob ? (
+        <div className="bg-white p-4 rounded shadow">
+          <p className="font-semibold text-blue-700">{activeJob.service}</p>
+          <p className="text-sm">Customer: {activeJob.customer?.name}</p>
+          <p className="text-sm">
+            Location: {activeJob.location?.address}
+          </p>
+
+          <button
+            onClick={() => navigate(`/track/${activeJob._id}`)}
+            className="mt-3 bg-blue-600 text-white px-4 py-2 rounded"
+          >
+            Track Location
+          </button>
+
+         {/* STEP 1: Provider requests OTP */}
+{activeJob.status === "accepted" && (
+  <button
+    onClick={() => requestCompletionOTP(activeJob._id)}
+    className="mt-4 bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded w-full"
+  >
+    Mark Service Completed
+  </button>
 )}
 
-     <h2 className="text-xl font-semibold mt-8 mb-3">Active Job</h2>
-{activeJob ? (
-  <div className="bg-white p-4 rounded-lg shadow-md">
-    <p className="font-semibold text-blue-700">{activeJob.service}</p>
+{/* STEP 2: Provider verifies OTP */}
+{activeJob.status === "waiting_customer_verification" && (
+  <div className="mt-4">
+    <input
+      type="text"
+      placeholder="Enter OTP"
+      value={otp}
+      onChange={(e) => setOtp(e.target.value)}
+      className="border p-2 rounded w-full mb-2"
+    />
 
-    {/* Customer Name */}
-    <p className="text-sm text-gray-600">
-      Customer: {activeJob.customer?.name}
-    </p>
-
-    {/* Address */}
-    <p className="text-sm text-gray-600">
-      Location: {activeJob.location?.address}
-    </p>
-
-    {/* Job Start Time */}
-    <p className="text-sm text-gray-600">
-      Started at: {new Date(activeJob.updatedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-    </p>
-
-    <div className="flex gap-3 mt-3">
-      <button
-  onClick={() => navigate(`/track/${activeJob._id}`)}
-  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md"
->
-  Track Location
-</button>
-
-
-      <button
-        className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md shadow"
-        onClick={() => completeJob(activeJob._id)}
-      >
-        Mark Completed
-      </button>
-    </div>
+    <button
+      onClick={() => verifyOTP(activeJob._id)}
+      className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded w-full"
+    >
+      Verify OTP & Complete Job
+    </button>
   </div>
-) : (
-  <p className="text-gray-600">No active job at the moment 👍</p>
 )}
 
-      
+        </div>
+      ) : (
+        <p>No active job right now 👍</p>
+      )}
     </div>
   );
 };

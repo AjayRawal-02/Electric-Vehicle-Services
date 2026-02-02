@@ -26,6 +26,9 @@ import CustomerQuotes from "../src/Components/CustomerQuotes";
 import Notifications from './Service Provider/Notifications';
 import TrackOrder from "../src/Components/TrackOrder";
 import TrackOrderPage from './Components/TrackOrderPage';
+import HelpCenterCustomer from './Components/HelpCenterCustomer';
+import HelpCenterProvider from './Service Provider/HelpCenterProvider';
+import CustomerOTP from './Components/CustomerOTP';
 
 const App = () => {
   const { user } = useContext(AuthContext);
@@ -82,7 +85,8 @@ const App = () => {
             )
           }
         />
-
+        <Route path='/help' element={<HelpCenterCustomer/>}/>
+        <Route path='/service-provider/help' element={<HelpCenterProvider/>}/>
         {/* Booking */}
         <Route path="book" element={<Book />} />
 
@@ -105,6 +109,11 @@ const App = () => {
         <Route path="/notifications" element={<Notifications />} />
         {/* <Route path="/track/:bookingId" element={<TrackOrder />} /> */}
         <Route path="/track/:bookingId" element={<TrackOrderPage />} />
+
+        <Route
+  path="/verify-service/:bookingId"
+  element={<CustomerOTP />}
+/>
       </Routes>
       <Toaster/>
     </div>
