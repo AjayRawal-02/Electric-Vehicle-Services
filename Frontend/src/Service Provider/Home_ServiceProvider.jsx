@@ -8,8 +8,7 @@ const Home_ServiceProvider = () => {
   const [username, setUsername] = useState("");
   const [liveRequests, setLiveRequests] = useState([]);
   const [activeJob, setActiveJob] = useState(null);
-  const [loadingRequests, setLoadingRequests] = useState(true);
-const [loadingActiveJob, setLoadingActiveJob] = useState(true);
+  const [loading, setLoading] = useState(true);
 
   const [price, setPrice] = useState({});
   const [otp, setOtp] = useState("");
@@ -33,26 +32,22 @@ const [loadingActiveJob, setLoadingActiveJob] = useState(true);
 
   /* -------------------- FETCH REQUESTS -------------------- */
   const fetchLiveRequests = async () => {
-  try {
-    setLoadingRequests(true);
-    const token = localStorage.getItem("token");
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(
+        "https://electric-vehicle-services.onrender.com/api/provider/bookings/pending",
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      const data = await res.json();
 
-    const res = await fetch(
-      "https://electric-vehicle-services.onrender.com/api/provider/bookings/pending",
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
-
-    const data = await res.json();
-    if (!res.ok) return toast.error(data.message);
-
-    setLiveRequests(data || []);
-  } catch {
-    toast.error("Failed to load requests");
-  } finally {
-    setLoadingRequests(false);
-  }
-};
-
+      if (!res.ok) return toast.error(data.message);
+      setLiveRequests(data);
+    } catch {
+      toast.error("Failed to load requests");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   /* -------------------- SUBMIT QUOTE -------------------- */
   const submitQuote = async (bookingId, amount) => {
@@ -102,25 +97,19 @@ const [loadingActiveJob, setLoadingActiveJob] = useState(true);
   };
 
   /* -------------------- ACTIVE JOB -------------------- */
-const fetchActiveJob = async () => {
-  try {
-    setLoadingActiveJob(true);
-    const token = localStorage.getItem("token");
-
-    const res = await fetch(
-      "https://electric-vehicle-services.onrender.com/api/provider/active-job",
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
-
-    const data = await res.json();
-    setActiveJob(data.job || null);
-  } catch {
-    toast.error("Failed to load active job");
-  } finally {
-    setLoadingActiveJob(false);
-  }
-};
-
+  const fetchActiveJob = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(
+        "https://electric-vehicle-services.onrender.com/api/provider/active-job",
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      const data = await res.json();
+      setActiveJob(data.job || null);
+    } catch {
+      toast.error("Failed to load active job");
+    }
+  };
 
   /* -------------------- OTP VERIFY -------------------- */
   const verifyOTP = async (bookingId) => {
@@ -216,28 +205,7 @@ const fetchActiveJob = async () => {
     toast.error(data.message);
   }
 };
-
-const LiveRequestSkeleton = () => (
-  <div className="bg-white rounded-xl shadow p-5 animate-pulse">
-    <div className="h-4 w-40 bg-gray-200 rounded mb-3" />
-    <div className="h-3 w-52 bg-gray-200 rounded mb-2" />
-    <div className="h-3 w-full bg-gray-200 rounded mb-4" />
-    <div className="flex gap-2">
-      <div className="h-10 w-32 bg-gray-200 rounded" />
-      <div className="h-10 w-24 bg-gray-200 rounded" />
-    </div>
-  </div>
-);
-
-const ActiveJobSkeleton = () => (
-  <div className="bg-white rounded-xl shadow p-6 animate-pulse border-l-4 border-green-300">
-    <div className="h-5 w-48 bg-gray-200 rounded mb-3" />
-    <div className="h-3 w-56 bg-gray-200 rounded mb-2" />
-    <div className="h-3 w-full bg-gray-200 rounded mb-4" />
-    <div className="h-10 w-40 bg-gray-200 rounded" />
-  </div>
-);
-
+console.log(activeJob)
   /* -------------------- UI -------------------- */
  return (
   <div className="min-h-screen bg-gradient-to-br from-[#eef7f3] to-[#f9fbff] p-4 sm:p-8">
@@ -346,14 +314,9 @@ const ActiveJobSkeleton = () => (
       🔔 Live Service Requests
     </h2>
 
-    {loadingRequests ? (
-  <div className="grid md:grid-cols-2 gap-5">
-    {[1, 2, 3].map((i) => (
-      <LiveRequestSkeleton key={i} />
-    ))}
-  </div>
-) : liveRequests.length === 0 ? (
-
+    {loading ? (
+      <p className="text-gray-600">Loading requests...</p>
+    ) : liveRequests.length === 0 ? (
       <p className="text-gray-500 bg-white p-4 rounded-lg shadow">
         No new requests right now 🚀
       </p>
@@ -411,9 +374,7 @@ const ActiveJobSkeleton = () => (
       🚧 Active Job
     </h2>
 
-    {loadingActiveJob ? (
-  <ActiveJobSkeleton />
-) : activeJob ? (
+    {activeJob ? (
       <div className="bg-white rounded-xl shadow p-6 border-l-4 border-green-500">
         <h3 className="text-xl font-semibold text-green-700">
           {activeJob.service}

@@ -44,47 +44,41 @@ const Notifications = () => {
 
       toast.success("All notifications cleared");
       setNotifications([]);
-window.dispatchEvent(new Event("notifications-updated"));
-
     } catch {
       toast.error("Failed to clear notifications");
     }
   };
 
   /* ---------------- REMOVE SINGLE (PERMANENT) ---------------- */
-const removeSingleNotification = async (notificationId) => {
-  const token = localStorage.getItem("token");
+  const removeSingleNotification = async (notificationId) => {
+    const token = localStorage.getItem("token");
 
-  try {
-    const res = await fetch(
-      `https://electric-vehicle-services.onrender.com/api/auth/notifications/${notificationId}`,
-      {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` },
-      }
-    );
+    try {
+      const res = await fetch(
+        `https://electric-vehicle-services.onrender.com/api/auth/notifications/${notificationId}`,
+        {
+          method: "DELETE",
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
 
-    const data = await res.json();
-    if (!res.ok) return toast.error(data.message);
+      const data = await res.json();
+      if (!res.ok) return toast.error(data.message);
 
-    setNotifications((prev) =>
-      prev.filter((n) => n._id !== notificationId)
-    );
+      setNotifications((prev) =>
+        prev.filter((n) => n._id !== notificationId)
+      );
 
-    // 🔔 notify navbar to refresh count
-    window.dispatchEvent(new Event("notifications-updated"));
-
-    toast.success("Notification removed");
-  } catch {
-    toast.error("Failed to remove notification");
-  }
-};
-
+      toast.success("Notification removed");
+    } catch {
+      toast.error("Failed to remove notification");
+    }
+  };
 
   useEffect(() => {
     fetchNotifications();
   }, []);
-console.log(notifications)
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#eef7f3] to-[#f9fbff] p-4 sm:p-8">
       {/* HEADER */}
@@ -158,8 +152,7 @@ console.log(notifications)
                 {note.message}
               </p>
               <p className="text-xs text-gray-500 mt-2">
-                {new Date(note.createdAt || note.time || note.date).toLocaleString()
-}
+                {new Date(note.time).toLocaleString()}
               </p>
 
               {/* unread dot */}

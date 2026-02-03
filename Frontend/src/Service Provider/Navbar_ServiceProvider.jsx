@@ -1,79 +1,35 @@
-import React, { useState, useEffect, useContext, useRef } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import React, { useState,useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import user_img from "../assets/download.png";
-import logo from "../assets/logo1.png";
-import { toast } from "react-hot-toast";
+import logo from '../assets/logo1.png';
+import { toast } from 'react-hot-toast';
+import { useContext } from "react";
 import { AuthContext } from "../Context/AuthContext";
+
 
 const Navbar_ServiceProvider = () => {
   const { user, setUser } = useContext(AuthContext);
   const [menuOpen, setMenuOpen] = useState(false);
   const [profileDropdown, setProfileDropdown] = useState(false);
-  const [notifCount, setNotifCount] = useState(0);
-
   const navigate = useNavigate();
-  const profileRef = useRef(null);
+const [notifCount, setNotifCount] = useState(0);
 
-  useEffect(() => {
-  const handleClickOutside = (event) => {
-    if (
-      profileRef.current &&
-      !profileRef.current.contains(event.target)
-    ) {
-      setProfileDropdown(false);
-    }
-  };
+const fetchNotifications = async () => {
+  const token = localStorage.getItem("token");
+  if (!token) return;
 
-  document.addEventListener("mousedown", handleClickOutside);
+  const res = await fetch("https://electric-vehicle-services.onrender.com/api/auth/notifications", {
+    headers: { Authorization: `Bearer ${token}` },
+  });
 
-  return () => {
-    document.removeEventListener("mousedown", handleClickOutside);
-  };
-}, []);
+  const data = await res.json();
+  setNotifCount(Array.isArray(data.notifications) ? data.notifications.length : 0);
+};
 
 
-  /* ---------------- FETCH UNREAD COUNT ---------------- */
-  const fetchNotifications = async () => {
-    const token = localStorage.getItem("token");
-    if (!token) return;
 
-    try {
-      const res = await fetch(
-        "https://electric-vehicle-services.onrender.com/api/auth/notifications",
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+  // const { user, setUser } = useContext(AuthContext); // 🔥 live user state
 
-      const data = await res.json();
-
-      if (!Array.isArray(data)) return;
-
-      // ✅ count only unread notifications
-      const unreadCount = data.filter((n) => !n.read).length;
-      setNotifCount(unreadCount);
-    } catch (err) {
-      console.error("Failed to fetch notifications");
-    }
-  };
-
-  /* ---------------- EFFECT ---------------- */
-useEffect(() => {
-  if (!user) return;
-
-  fetchNotifications(); // initial fetch
-
-  const handleUpdate = () => fetchNotifications();
-
-  window.addEventListener("notifications-updated", handleUpdate);
-
-  return () => {
-    window.removeEventListener("notifications-updated", handleUpdate);
-  };
-}, [user]);
-
-
-  /* ---------------- PROTECTED NAV ---------------- */
   const handleProtectedClick = (path) => {
     if (!user) {
       toast.warning("Please login first!");
@@ -84,30 +40,26 @@ useEffect(() => {
     setMenuOpen(false);
   };
 
-  /* ---------------- LOGOUT ---------------- */
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
-    setUser(null);
-    setNotifCount(0);
+    setUser(null); // 🔥 live logout update
     toast.success("Logged out successfully!");
     navigate("/");
     setMenuOpen(false);
     setProfileDropdown(false);
   };
 
+
   return (
     <div className="flex justify-between items-center p-3 border-b border-gray-300 relative">
-      {/* LOGO */}
+
+      {/* Logo */}
       <Link to="/" className="ml-4 sm:ml-6">
-        <img
-          src={logo}
-          alt="Company Logo"
-          className="h-8 sm:h-9 lg:h-10 w-auto object-contain"
-        />
+        <img src={logo} alt="Company Logo" className="h-8 sm:h-9 lg:h-10 w-auto object-contain" />
       </Link>
 
-      {/* DESKTOP MENU */}
+      {/* Desktop Menu */}
       <div className="hidden md:flex items-center gap-6 mr-8">
         <ul className="flex gap-6 items-center">
           <li><button onClick={() => handleProtectedClick("/")}>Home</button></li>
@@ -115,28 +67,21 @@ useEffect(() => {
           <li><button onClick={() => handleProtectedClick("/earnings")}>My Earnings</button></li>
           <li><button onClick={() => handleProtectedClick("/service-provider/help")}>Help</button></li>
 
-          {/* 🔔 NOTIFICATION ICON */}
-          <li
-            className="relative cursor-pointer"
-            onClick={() => navigate("/notifications")}
-          >
-            <i className="fa-regular fa-bell bg-gray-100 p-2 rounded"></i>
+          <li className="relative cursor-pointer" onClick={() => navigate("/notifications")}>
+  <i className="fa-regular fa-bell bg-gray-100 p-2 rounded"></i>
+  
+  {notifCount > 0 && (
+    <span className="absolute -top-1 -right-1 bg-red-600 text-white text-xs rounded-full px-1">
+      {notifCount}
+    </span>
+  )}
+</li>
 
-            {notifCount > 0 && (
-              <span className="
-                absolute -top-1 -right-1
-                bg-red-600 text-white
-                text-xs font-bold
-                rounded-full px-1.5
-              ">
-                {notifCount}
-              </span>
-            )}
-          </li>
 
-          {/* PROFILE / LOGIN */}
+
+          {/* 🔥 Conditional Login / Profile */}
           {user ? (
-            <li className="relative" ref={profileRef}>
+            <li className="relative">
               <img
                 src={user?.photo || user_img}
                 alt="user"
@@ -146,12 +91,8 @@ useEffect(() => {
 
               {profileDropdown && (
                 <div className="absolute right-0 top-[42px] bg-white shadow-lg rounded-md w-44 py-2 z-20">
-                  <p className="px-4 py-2 font-semibold text-gray-700">
-                    {user?.name}
-                  </p>
-                  <p className="px-4 text-xs text-green-600">
-                    Service Provider
-                  </p>
+                  <p className="px-4 py-2 font-semibold text-gray-700">{user?.name}</p>
+                  <p className="px-4 text-xs text-green-600">Service Provider</p>
                   <hr />
                   <button onClick={() => navigate("/profile")} className="block w-full text-left px-4 py-2 hover:bg-gray-100 text-sm">Profile</button>
                   <button onClick={() => navigate("/service-requests")} className="block w-full text-left px-4 py-2 hover:bg-gray-100 text-sm">Service Requests</button>
@@ -173,22 +114,23 @@ useEffect(() => {
         </ul>
       </div>
 
-      {/* MOBILE MENU (unchanged logic) */}
+      {/* Mobile menu (unchanged except login fix) */}
       {menuOpen && (
         <div className="absolute top-full left-0 w-full bg-white shadow-lg rounded-b-md z-10">
           <ul className="flex flex-col p-4 gap-4 text-gray-800">
             {user ? (
               <img src={user?.photo || user_img} className="h-[34px] border rounded-full cursor-pointer" />
             ) : (
-              <Link to="/login" onClick={() => setMenuOpen(false)}>Login</Link>
+              <Link to="/login" className="hover:text-blue-700" onClick={() => setMenuOpen(false)}>Login</Link>
             )}
             <li><button onClick={() => handleProtectedClick("/service-requests")}>Service Requests</button></li>
             <li><button onClick={() => handleProtectedClick("/earnings")}>My Earnings</button></li>
             <li><button onClick={() => handleProtectedClick("/service-provider/help")}>Help</button></li>
-            {user && <li onClick={handleLogout} className="text-red-600 cursor-pointer">Logout</li>}
+            {user && <li onClick={handleLogout} className="hover:text-red-600 cursor-pointer">Logout</li>}
           </ul>
         </div>
       )}
+
     </div>
   );
 };
