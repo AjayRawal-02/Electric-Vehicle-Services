@@ -111,16 +111,23 @@ router.put("/update-profile",authMiddleware,upload.single("photo"),async (req, r
 router.get("/notifications", authMiddleware, async (req, res) => {
   try {
     const user = await User.findById(req.user.id).select("notifications");
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
     res.json(user.notifications || []);
-    // <-- wrapped inside object
   } catch (error) {
     res.status(500).json({ message: "Failed to fetch notifications" });
   }
 });
 
-router.delete("/notifications/clear", authMiddleware, async (req, res) => {
+router.put("/notifications/clear", authMiddleware, async (req, res) => {
   try {
-    await User.findByIdAndUpdate(req.user.id, { notifications: [] });
+    await User.findByIdAndUpdate(req.user.id, {
+      $set: { notifications: [] },
+    });
+
     res.json({ message: "Notifications cleared" });
   } catch (error) {
     res.status(500).json({ message: "Failed to clear notifications" });
@@ -128,11 +135,41 @@ router.delete("/notifications/clear", authMiddleware, async (req, res) => {
 });
 
 router.put("/notifications/read", authMiddleware, async (req, res) => {
-  await User.findByIdAndUpdate(req.user.id, {
-    $set: { "notifications.$[].read": true }
-  });
-  res.json({ message: "Notifications marked read" });
+  try {
+    await User.findByIdAndUpdate(req.user.id, {
+      $set: { "notifications.$[].read": true },
+    });
+
+    res.json({ message: "Notifications marked as read" });
+  } catch (error) {
+    res.status(500).json({ message: "Failed to mark notifications as read" });
+  }
 });
+
+router.delete("/notifications/:notificationId", authMiddleware, async (req, res) => {
+  try {
+    const { notificationId } = req.params;
+
+    const user = await User.findByIdAndUpdate(
+      req.user.id,
+      {
+        $pull: {
+          notifications: { _id: notificationId },
+        },
+      },
+      { new: true }
+    );
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    res.json({ message: "Notification deleted" });
+  } catch (error) {
+    res.status(500).json({ message: "Failed to delete notification" });
+  }
+});
+
 
 
 export default router;

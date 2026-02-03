@@ -49,10 +49,6 @@ paymentStatus: {
 completionOTP: {
   type: String,
   default: null
-},
-otpExpiresAt: {
-  type: Date,
-  default: null
 }
 ,
   assignedProvider: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },

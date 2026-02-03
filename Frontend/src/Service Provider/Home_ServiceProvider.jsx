@@ -205,132 +205,234 @@ const Home_ServiceProvider = () => {
     toast.error(data.message);
   }
 };
-
+console.log(activeJob)
   /* -------------------- UI -------------------- */
-  return (
-    <div className="p-6 bg-[#f7fafb] min-h-screen">
-      <h1 className="text-3xl font-semibold">Welcome back, {username} 👋</h1>
+ return (
+  <div className="min-h-screen bg-gradient-to-br from-[#eef7f3] to-[#f9fbff] p-4 sm:p-8">
+    {/* HEADER */}
+    <div className="relative mb-10 rounded-3xl overflow-hidden">
+  {/* Gradient background */}
+  <div className="absolute inset-0 bg-gradient-to-br from-green-500 via-emerald-500 to-teal-500" />
 
-      {/* SUMMARY */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-6">
-        {[
-          ["New Requests", summary.newRequests],
-          ["Active Jobs", summary.activeJobs],
-          ["Earnings Today", `₹${summary.earningsToday}`],
-          ["Rating", `${summary.rating} ★`],
-        ].map(([label, value]) => (
-          <div key={label} className="bg-white p-4 rounded shadow text-center">
-            <h2 className="text-xl font-bold text-blue-700">{value}</h2>
-            <p className="text-gray-600 text-sm">{label}</p>
+  {/* Glass overlay */}
+  <div className="absolute inset-0 bg-white/10 backdrop-blur-xl" />
+
+  {/* Content */}
+  <div className="relative z-10 px-6 py-8 sm:px-10 sm:py-10 flex flex-col sm:flex-row sm:items-center sm:justify-between text-white">
+    <div>
+      <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight">
+        Welcome back, <span className="text-yellow-300">{username}</span> 👋
+      </h1>
+      <p className="text-white/80 mt-2 text-sm sm:text-base">
+        Ready to accept new service requests today?
+      </p>
+    </div>
+
+    {/* Right badge */}
+    <div className="mt-4 sm:mt-0 flex items-center gap-3 bg-white/20 px-5 py-3 rounded-2xl shadow-inner">
+      <span className="text-2xl">🛠️</span>
+      <div>
+        <p className="text-xs uppercase tracking-wider opacity-80">
+          Dashboard
+        </p>
+        <p className="font-semibold">Service Provider</p>
+      </div>
+    </div>
+  </div>
+
+  {/* Decorative blobs */}
+  <div className="absolute -top-10 -right-10 w-40 h-40 bg-white/20 rounded-full blur-3xl" />
+  <div className="absolute bottom-0 -left-10 w-32 h-32 bg-white/20 rounded-full blur-2xl" />
+</div>
+
+
+    {/* SUMMARY */}
+    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
+  {[
+    {
+      label: "New Requests",
+      value: summary.newRequests,
+      icon: "📥",
+      gradient: "from-blue-500 to-cyan-400",
+    },
+    {
+      label: "Active Jobs",
+      value: summary.activeJobs,
+      icon: "🛠️",
+      gradient: "from-orange-500 to-amber-400",
+    },
+    {
+      label: "Earnings Today",
+      value: `₹${summary.earningsToday}`,
+      icon: "💰",
+      gradient: "from-green-500 to-emerald-400",
+    },
+    {
+      label: "Rating",
+      value: `${summary.rating} ★`,
+      icon: "⭐",
+      gradient: "from-purple-500 to-pink-400",
+    },
+  ].map((card) => (
+    <div
+      key={card.label}
+      className={`
+        relative overflow-hidden rounded-2xl p-6 text-white
+        bg-gradient-to-br ${card.gradient}
+        shadow-xl hover:shadow-2xl
+        transition-all duration-300
+        hover:-translate-y-1
+      `}
+    >
+      {/* Glass blur layer */}
+      <div className="absolute inset-0 bg-white/10 backdrop-blur-md" />
+
+      {/* Content */}
+      <div className="relative z-10 flex items-center justify-between">
+        <div>
+          <p className="text-sm opacity-90">{card.label}</p>
+          <h2 className="text-3xl font-extrabold mt-1 tracking-tight">
+            {card.value}
+          </h2>
+        </div>
+
+        {/* Icon bubble */}
+        <div className="text-4xl bg-white/20 rounded-full p-3 shadow-inner">
+          {card.icon}
+        </div>
+      </div>
+
+      {/* Decorative gradient blob */}
+      <div className="absolute -bottom-6 -right-6 w-32 h-32 bg-white/20 rounded-full blur-2xl" />
+    </div>
+  ))}
+</div>
+
+
+    {/* LIVE REQUESTS */}
+    <h2 className="text-2xl font-semibold text-gray-800 mt-10 mb-4">
+      🔔 Live Service Requests
+    </h2>
+
+    {loading ? (
+      <p className="text-gray-600">Loading requests...</p>
+    ) : liveRequests.length === 0 ? (
+      <p className="text-gray-500 bg-white p-4 rounded-lg shadow">
+        No new requests right now 🚀
+      </p>
+    ) : (
+      <div className="grid md:grid-cols-2 gap-5">
+        {liveRequests.map((req) => (
+          <div
+            key={req._id}
+            className="bg-white rounded-xl shadow hover:shadow-lg transition p-5 border"
+          >
+            <h3 className="text-lg font-semibold text-blue-700">
+              {req.service}
+            </h3>
+            <p className="text-sm text-gray-600 mt-1">
+              👤 Customer: <b>{req.customer.name}</b>
+            </p>
+
+            {req.additionalDetails && (
+              <div className="mt-3 bg-gray-50 p-3 rounded text-sm">
+                <b>Issue:</b> {req.additionalDetails}
+              </div>
+            )}
+
+            <div className="flex items-center gap-2 mt-4">
+              <input
+                type="number"
+                placeholder="Quote ₹"
+                className="border p-2 rounded w-full"
+                value={price[req._id] || ""}
+                onChange={(e) =>
+                  setPrice({ ...price, [req._id]: e.target.value })
+                }
+              />
+              <button
+                onClick={() => submitQuote(req._id, price[req._id])}
+                className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded"
+              >
+                Send
+              </button>
+            </div>
+
+            <button
+              onClick={() => handleReject(req._id)}
+              className="mt-3 text-sm text-red-600 hover:underline"
+            >
+              Reject Request
+            </button>
           </div>
         ))}
       </div>
+    )}
 
-      {/* LIVE REQUESTS */}
-      <h2 className="text-xl font-semibold mt-8 mb-3">Live Service Requests</h2>
+    {/* ACTIVE JOB */}
+    <h2 className="text-2xl font-semibold text-gray-800 mt-10 mb-4">
+      🚧 Active Job
+    </h2>
 
-      {loading ? (
-        <p>Loading...</p>
-      ) : liveRequests.length === 0 ? (
-        <p>No new requests</p>
-      ) : (
-        <div className="grid gap-4">
-          {liveRequests.map((req) => (
-            <div key={req._id} className="bg-white p-4 rounded shadow">
-              <h3 className="font-semibold text-blue-700">{req.service}</h3>
-              <p className="text-sm text-gray-600">
-                Customer: {req.customer.name}
-              </p>
+    {activeJob ? (
+      <div className="bg-white rounded-xl shadow p-6 border-l-4 border-green-500">
+        <h3 className="text-xl font-semibold text-green-700">
+          {activeJob.service}
+        </h3>
+        <p className="text-sm mt-1">
+          👤 Customer: {activeJob.customer?.name}
+        </p>
+        <p className="text-sm">
+          📍 Location: {activeJob.location?.address}
+        </p>
 
-              {req.additionalDetails && (
-                <p className="bg-gray-100 p-2 mt-2 rounded text-sm">
-                  <b>Issue:</b> {req.additionalDetails}
-                </p>
-              )}
-
-              <div className="flex gap-2 mt-3">
-                <input
-                  type="number"
-                  placeholder="Enter quote ₹"
-                  className="border p-2 rounded w-40"
-                  value={price[req._id] || ""}
-                  onChange={(e) =>
-                    setPrice({ ...price, [req._id]: e.target.value })
-                  }
-                />
-                <button
-                  onClick={() => submitQuote(req._id, price[req._id])}
-                  className="bg-green-600 text-white px-4 rounded"
-                >
-                  Send Quote
-                </button>
-              </div>
-
-              <button
-                onClick={() => handleReject(req._id)}
-                className="mt-3 bg-red-600 text-white px-4 py-1 rounded"
-              >
-                Reject
-              </button>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* ACTIVE JOB */}
-      <h2 className="text-xl font-semibold mt-8 mb-3">Active Job</h2>
-
-      {activeJob ? (
-        <div className="bg-white p-4 rounded shadow">
-          <p className="font-semibold text-blue-700">{activeJob.service}</p>
-          <p className="text-sm">Customer: {activeJob.customer?.name}</p>
-          <p className="text-sm">
-            Location: {activeJob.location?.address}
-          </p>
-
+        <div className="flex flex-wrap gap-3 mt-4">
           <button
             onClick={() => navigate(`/track/${activeJob._id}`)}
-            className="mt-3 bg-blue-600 text-white px-4 py-2 rounded"
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded"
           >
             Track Location
           </button>
 
-         {/* STEP 1: Provider requests OTP */}
-{activeJob.status === "accepted" && (
-  <button
-    onClick={() => requestCompletionOTP(activeJob._id)}
-    className="mt-4 bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded w-full"
-  >
-    Mark Service Completed
-  </button>
-)}
-
-{/* STEP 2: Provider verifies OTP */}
-{activeJob.status === "waiting_customer_verification" && (
-  <div className="mt-4">
-    <input
-      type="text"
-      placeholder="Enter OTP"
-      value={otp}
-      onChange={(e) => setOtp(e.target.value)}
-      className="border p-2 rounded w-full mb-2"
-    />
-
-    <button
-      onClick={() => verifyOTP(activeJob._id)}
-      className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded w-full"
-    >
-      Verify OTP & Complete Job
-    </button>
-  </div>
-)}
-
+          {activeJob.status === "accepted" && (
+            <button
+              onClick={() => requestCompletionOTP(activeJob._id)}
+              className="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded"
+            >
+              Mark Completed
+            </button>
+          )}
         </div>
-      ) : (
-        <p>No active job right now 👍</p>
-      )}
-    </div>
-  );
+
+        {activeJob.status === "waiting_customer_verification" && (
+          <div className="mt-5 bg-gray-50 p-4 rounded">
+            <p className="text-sm text-gray-600 mb-2">
+              🔐 Enter OTP shared by customer
+            </p>
+            <input
+              type="text"
+              placeholder="Enter OTP"
+              value={otp}
+              onChange={(e) => setOtp(e.target.value)}
+              className="border p-2 rounded w-full mb-3"
+            />
+            <button
+              onClick={() => verifyOTP(activeJob._id)}
+              className="bg-green-600 hover:bg-green-700 text-white w-full py-2 rounded"
+            >
+              Verify OTP & Complete Job
+            </button>
+          </div>
+        )}
+      </div>
+    ) : (
+      <p className="text-gray-500 bg-white p-4 rounded shadow">
+        No active job right now 👍
+      </p>
+    )}
+  </div>
+);
+
 };
 
 export default Home_ServiceProvider;

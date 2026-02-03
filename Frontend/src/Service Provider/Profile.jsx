@@ -100,58 +100,90 @@ const { setUser } = useContext(AuthContext);
     return <div className="text-center p-10 text-xl">Loading...</div>;
 
   return (
-    <div className="bg-[#f0fcf4] min-h-screen p-6 sm:p-10 flex justify-center">
-      <div className="bg-white shadow-lg rounded-xl p-8 w-full max-w-3xl">
-        <h1 className="text-3xl font-bold text-gray-900 text-center mb-6">
-          Service Provider Profile
-        </h1>
+  <div className="min-h-screen bg-gradient-to-br from-[#eef7f3] to-[#f9fbff] p-4 sm:p-10 flex justify-center">
+    <div className="w-full max-w-4xl">
+      
+      {/* PROFILE HERO */}
+      <div className="relative mb-12 rounded-3xl overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-green-500 via-emerald-500 to-teal-500" />
+        <div className="absolute inset-0 bg-white/10 backdrop-blur-xl" />
 
-        {/* Profile Image */}
-        <div className="flex justify-center mb-6">
-          <div className="relative w-32 h-32">
-            {/* show uploaded or preview image */}
-    {previewImg || profile.photo ? (
-      <img
-        src={previewImg || profile.photo}
-        alt="profile"
-        className="w-32 h-32 rounded-full object-cover border-4 border-blue-500"
-      />
-    ) : (
-      /* Camera icon when no photo */
-      <div className="w-32 h-32 rounded-full border-4 border-blue-500 bg-gray-200 flex items-center justify-center">
-        <i className="fa-solid fa-camera text-gray-600 text-3xl"></i>
-      </div>
-    )}
+        <div className="relative z-10 px-8 py-10 flex flex-col sm:flex-row items-center gap-6 text-white">
+          
+          {/* Avatar */}
+          <div className="relative">
+            {previewImg || profile.photo ? (
+              <img
+                src={previewImg || profile.photo}
+                alt="profile"
+                className="w-32 h-32 rounded-full object-cover border-4 border-white shadow-lg"
+              />
+            ) : (
+              <div className="w-32 h-32 rounded-full bg-white/30 flex items-center justify-center text-4xl">
+                👤
+              </div>
+            )}
 
-           {isEditing && (
-      <label className="absolute bottom-1 right-1 bg-blue-600 shadow-md text-white px-2 py-1 text-xs rounded cursor-pointer hover:bg-blue-700">
-        Upload
-        <input type="file" accept="image/*" hidden onChange={handleImageSelect} />
-      </label>
-    )}
+            {isEditing && (
+              <label className="absolute bottom-1 right-1 bg-black/60 text-white px-3 py-1 text-xs rounded-full cursor-pointer hover:bg-black">
+                Change
+                <input
+                  type="file"
+                  accept="image/*"
+                  hidden
+                  onChange={handleImageSelect}
+                />
+              </label>
+            )}
+          </div>
+
+          {/* Info */}
+          <div className="text-center sm:text-left">
+            <h1 className="text-3xl font-extrabold tracking-tight">
+              {profile.name || "Service Provider"}
+            </h1>
+            <p className="opacity-90 mt-1">{profile.email}</p>
+
+            <div className="mt-4 inline-flex items-center gap-2 bg-white/20 px-4 py-2 rounded-xl text-sm">
+              🛠️ {profile.serviceType || "Service Type"}
+            </div>
           </div>
         </div>
+      </div>
 
-        {/* Form Fields */}
-        <div className="space-y-4">
+      {/* PROFILE FORM */}
+      <div className="bg-white rounded-3xl shadow-xl p-6 sm:p-10">
+        <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">
+          Profile Details
+        </h2>
+
+        <div className="grid sm:grid-cols-2 gap-6">
           <InputField label="Name" disabled={!isEditing} value={profile.name} onChange={(v) => setProfile({ ...profile, name: v })} />
           <InputField label="Email" disabled value={profile.email} />
           <InputField label="Phone" disabled={!isEditing} value={profile.phone} onChange={(v) => setProfile({ ...profile, phone: v })} />
-          <InputField label="Address" type="textarea" disabled={!isEditing} value={profile.address} onChange={(v) => setProfile({ ...profile, address: v })} />
           <InputField label="Service Type" disabled={!isEditing} value={profile.serviceType} onChange={(v) => setProfile({ ...profile, serviceType: v })} />
           <InputField label="Experience (Years)" disabled={!isEditing} value={profile.experience} onChange={(v) => setProfile({ ...profile, experience: v })} />
           <InputField label="Working Area" disabled={!isEditing} value={profile.workingArea} onChange={(v) => setProfile({ ...profile, workingArea: v })} />
+          <div className="sm:col-span-2">
+            <InputField label="Address" type="textarea" disabled={!isEditing} value={profile.address} onChange={(v) => setProfile({ ...profile, address: v })} />
+          </div>
         </div>
 
-        {/* Buttons */}
-        <div className="flex justify-center gap-4 mt-7">
+        {/* ACTIONS */}
+        <div className="flex justify-center gap-4 mt-10">
           {!isEditing ? (
-            <button onClick={() => setIsEditing(true)} className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+            <button
+              onClick={() => setIsEditing(true)}
+              className="px-8 py-3 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 transition"
+            >
               Edit Profile
             </button>
           ) : (
             <>
-              <button onClick={handleUpdate} className="px-6 py-2 bg-green-600 text-white rounded-md hover:bg-green-700">
+              <button
+                onClick={handleUpdate}
+                className="px-8 py-3 rounded-xl bg-green-600 text-white font-semibold hover:bg-green-700 transition"
+              >
                 Save Changes
               </button>
               <button
@@ -159,7 +191,7 @@ const { setUser } = useContext(AuthContext);
                   setIsEditing(false);
                   setPreviewImg(null);
                 }}
-                className="px-6 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
+                className="px-8 py-3 rounded-xl bg-red-500 text-white font-semibold hover:bg-red-600 transition"
               >
                 Cancel
               </button>
@@ -168,31 +200,45 @@ const { setUser } = useContext(AuthContext);
         </div>
       </div>
     </div>
-  );
+  </div>
+);
+
 };
 
 // Reusable input component
 const InputField = ({ label, value, onChange, disabled, type }) => (
   <div>
-    <label className="text-gray-600 font-medium">{label}</label>
+    <label className="text-sm font-semibold text-gray-600 mb-1 block">
+      {label}
+    </label>
+
     {type === "textarea" ? (
       <textarea
         disabled={disabled}
         value={value}
         onChange={(e) => onChange && onChange(e.target.value)}
-        className="w-full p-3 border rounded-md disabled:bg-gray-100"
         rows="3"
-      ></textarea>
+        className="
+          w-full rounded-xl border px-4 py-3
+          focus:ring-2 focus:ring-green-400 focus:outline-none
+          disabled:bg-gray-100 disabled:text-gray-500
+        "
+      />
     ) : (
       <input
         type="text"
         disabled={disabled}
         value={value}
         onChange={(e) => onChange && onChange(e.target.value)}
-        className="w-full p-3 border rounded-md disabled:bg-gray-100"
+        className="
+          w-full rounded-xl border px-4 py-3
+          focus:ring-2 focus:ring-green-400 focus:outline-none
+          disabled:bg-gray-100 disabled:text-gray-500
+        "
       />
     )}
   </div>
 );
+
 
 export default Profile_ServiceProvider;
